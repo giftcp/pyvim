@@ -1,48 +1,23 @@
 # syntax=docker/dockerfile:1
 
-############################
-# Stage 1: Python base image
-############################
-ARG PYTHON_VERSION=3.12.4
-FROM python:${PYTHON_VERSION}-slim AS python-base
+# Comments are provided throughout this file to help you get started.
+# If you need more help, visit the Dockerfile reference guide at
+# https://docs.docker.com/engine/reference/builder/
+# docker build -f Dockerfile -t mytag .
+ARG PYTHON_VERSION=3.13.3
+FROM python:${PYTHON_VERSION} 
 
+# Prevents Python from writing pyc files.
 ENV PYTHONDONTWRITEBYTECODE=1
+
+# Keeps Python from buffering stdout and stderr to avoid situations where
+# the application crashes without emitting any logs due to buffering.
 ENV PYTHONUNBUFFERED=1
 
-COPY requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip \
-  python -m pip install -r requirements.txt
+WORKDIR /app
 
-############################
-# Stage 2: Neovim base image
-############################
-FROM anatolelucet/neovim:0.11.1 AS neovim-base
-
-# Copy init.lua (or config) for plugin install
-RUN mkdir -p /root/.config/nvim
-COPY init.lua /root/.config/nvim/init.lua
-
-# Install Neovim plugins at build time
-RUN nvim --headless "+Lazy! sync" +qa
-
-RUN ls /usr
-
-############################
-# Stage 3: Final image
-############################
-FROM python:${PYTHON_VERSION}-slim AS final
-
-# Copy Python packages and app
-COPY --from=python-base /usr/local/lib/python3.12 /usr/local/lib/python3.12
-COPY --from=python-base /usr/local/bin /usr/local/bin
-# COPY --from=python-base /app /app
-
-# Copy Neovim binary and config
-COPY --from=neovim-base /usr/local/bin/nvim /usr/local/bin/nvim
-# COPY --from=neovim-base /usr/share/nvim /usr/share/nvim
-COPY --from=neovim-base /root/.config/nvim /root/.config/nvim
-
-# Re-create user
+# Create a non-privileged user that the app will run under.
+# See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
 ARG UID=10001
 RUN adduser \
   --disabled-password \
@@ -53,8 +28,15 @@ RUN adduser \
   --uid "${UID}" \
   appuser
 
-WORKDIR /app
-EXPOSE 8000
+RUN --mount=type=cache,target=/root/.cache/pip \
+  --mount=type=bind,source=requirements.txt,target=requirements.txt \
+  pip install -r requirements.txt
+
+# Switch to the non-privileged user to run the application.
 USER appuser
 
-CMD ["python3", "-m", "http.server", "8000"]
+# Copy the application code to the working directory
+COPY . .
+
+# Start the HTTP server
+CMD ["python3", "-m", "http.server", "7000"]
