@@ -1,42 +1,37 @@
-# syntax=docker/dockerfile:1
+# ---- Stage 1: Source Image (where everything is already installed) ----
+FROM python:lazy AS source
 
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Dockerfile reference guide at
-# https://docs.docker.com/engine/reference/builder/
-# docker build -f Dockerfile -t mytag .
-ARG PYTHON_VERSION=3.13.3
-FROM python:${PYTHON_VERSION} 
+# ---- Stage 2: Target Image ----
+FROM debian:bookworm-slim
 
-# Prevents Python from writing pyc files.
-ENV PYTHONDONTWRITEBYTECODE=1
+# Install minimal dependencies if needed
+RUN apt update && apt install -y \
+  iputils-ping \
+  gcc \
+  && apt clean && rm -rf /var/lib/apt/lists/*
 
-# Keeps Python from buffering stdout and stderr to avoid situations where
-# the application crashes without emitting any logs due to buffering.
-ENV PYTHONUNBUFFERED=1
+# Create a non-root user (optional)
+RUN useradd -ms /bin/bash appuser
 
-WORKDIR /app
+# Copy Python from source
+COPY --from=source /usr/bin/python3 /usr/bin/python3
+COPY --from=source /usr/lib/python3.*/ /usr/lib/python3.*/
+COPY --from=source /usr/include/python3.*/ /usr/include/python3.*/
 
-# Create a non-privileged user that the app will run under.
-# See https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#user
-ARG UID=10001
-RUN adduser \
-  --disabled-password \
-  --gecos "" \
-  --home "/nonexistent" \
-  --shell "/sbin/nologin" \
-  --no-create-home \
-  --uid "${UID}" \
-  appuser
+# Copy Neovim binary
+COPY --from=source /usr/bin/nvim /usr/bin/nvim
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-  --mount=type=bind,source=requirements.txt,target=requirements.txt \
-  pip install -r requirements.txt
+# Copy Neovim config and plugins
+COPY --from=source /root/.config/nvim /home/appuser/.config/nvim
+COPY --from=source /root/.local/share/nvim /home/appuser/.local/share/nvim
 
-# Switch to the non-privileged user to run the application.
+# Fix permissions
+RUN chown -R appuser:appuser /home/appuser
+
+# Set working directory and user
 USER appuser
-
-# Copy the application code to the working directory
-COPY . .
+WORKDIR /home/appuser
+ENV PATH="/usr/bin:$PATH"
 
 # Start the HTTP server
-CMD ["python3", "-m", "http.server", "7000"]
+CMD ["tail", "-f", "/dev/null"]
