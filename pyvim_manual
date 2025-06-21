@@ -1,0 +1,37 @@
+FROM ubuntu:24.04.2
+
+# Install dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl git wget build-essential libssl-dev zlib1g-dev libbz2-dev \
+    libreadline-dev libsqlite3-dev libffi-dev ca-certificates \
+    tar xz-utils libncursesw5-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# -----------------------------
+# Install Python 3.13.3
+# -----------------------------
+WORKDIR /tmp
+RUN curl -LO https://www.python.org/ftp/python/3.13.3/Python-3.13.3.tgz && \
+    tar -xzf Python-3.13.3.tgz && \
+    cd Python-3.13.3 && \
+    ./configure --enable-optimizations --prefix=/opt/python3.13.3 && \
+    make -j$(nproc) && make install
+
+# Add Python to PATH
+ENV PATH="/opt/python3.13.3/bin:$PATH"
+
+# -----------------------------
+# Install Neovim 0.11.2
+# -----------------------------
+WORKDIR /tmp
+RUN curl -fL -o nvim.tar.gz https://github.com/neovim/neovim/releases/download/v0.11.2/nvim-linux-x86_64.tar.gz && \
+    tar -xzf nvim.tar.gz && \
+    mv nvim-linux-x86_64 /opt/nvim && \
+    rm nvim.tar.gz
+
+# Add Neovim to PATH
+ENV PATH="/opt/nvim/bin:$PATH"
+
+
+CMD ["/bin/bash"]
+

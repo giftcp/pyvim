@@ -1,0 +1,45 @@
+# ---- Stage 1: Source Image (where everything is already installed) ----
+FROM ubuntu:24.04.2
+
+# Install minimal dependencies if needed
+RUN apt update && apt install -y \
+  build-essential \
+  procps \
+  curl \
+  file \
+  git \
+  iputils-ping \
+  # locales \
+  && apt clean && rm -rf /var/lib/apt/lists/*
+
+# Set locale (required by some brew formulas)
+# RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen
+
+# Create non-root user
+ARG USER=appuser
+ARG UID=1001
+RUN useradd -m -s /bin/bash -u $UID $USER && \
+    echo "$USER ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Create the Homebrew directory and assign permissions
+RUN mkdir -p /home/linuxbrew/.linuxbrew && \
+    chown -R appuser:appuser /home/linuxbrew
+
+USER $USER
+WORKDIR /home/$USER
+
+# Set required environment variables for Homebrew
+ENV NONINTERACTIVE=1
+
+# Install Homebrew
+RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Add brew to PATH
+ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
+ENV HOMEBREW_NO_ANALYTICS=1
+
+
+
+
+# Set default shell
+CMD ["/bin/bash"]
