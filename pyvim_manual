@@ -29,6 +29,32 @@ RUN curl -fL -o nvim.tar.gz https://github.com/neovim/neovim/releases/download/v
     mv nvim-linux-x86_64 /opt/nvim && \
     rm nvim.tar.gz
 
+# Create a non-privileged user that the app will run under.
+ARG UID=10001
+RUN adduser \
+  --disabled-password \
+  --gecos "" \
+  --home "/nonexistent" \
+  --shell "/sbin/nologin" \
+  --no-create-home \
+  --uid "${UID}" \
+  appuser
+
+# Set working directory and user
+USER appuser
+WORKDIR /home/appuser
+ENV PATH="/usr/bin:$PATH"
+
+# install lazy
+# run lazy ensure that the binaries have loaded
+
+RUN mkdir -p /home/appuser/.config/nvim
+COPY init.lua /home/appuser/.config/nvim/init.lua
+RUN nvim --headless "+Lazy! sync" +qa
+
+
+# copy the binaries
+
 # Add Neovim to PATH
 ENV PATH="/opt/nvim/bin:$PATH"
 
