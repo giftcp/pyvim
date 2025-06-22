@@ -4,7 +4,7 @@ FROM ubuntu:24.04.2
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl git wget build-essential libssl-dev zlib1g-dev libbz2-dev \
     libreadline-dev libsqlite3-dev libffi-dev ca-certificates \
-    tar xz-utils libncursesw5-dev && \
+    tar xz-utils libncursesw5-dev adduser && \
     rm -rf /var/lib/apt/lists/*
 
 # -----------------------------
@@ -27,6 +27,7 @@ WORKDIR /tmp
 RUN curl -fL -o nvim.tar.gz https://github.com/neovim/neovim/releases/download/v0.11.2/nvim-linux-x86_64.tar.gz && \
     tar -xzf nvim.tar.gz && \
     mv nvim-linux-x86_64 /opt/nvim && \
+    ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim && \
     rm nvim.tar.gz
 
 # Create a non-privileged user that the app will run under.
@@ -34,23 +35,30 @@ ARG UID=10001
 RUN adduser \
   --disabled-password \
   --gecos "" \
-  --home "/nonexistent" \
-  --shell "/sbin/nologin" \
-  --no-create-home \
+  --home "/home/appuser" \
+  --shell "/bin/bash" \
   --uid "${UID}" \
-  appuser
+  appuser && \
+  mkdir -p /home/appuser && \
+  chown -R appuser:appuser /home/appuser
 
 # Set working directory and user
 USER appuser
 WORKDIR /home/appuser
 ENV PATH="/usr/bin:$PATH"
+ENV HOME=/home/appuser
 
-# install lazy
+# install LazyVim
+RUN git clone https://github.com/LazyVim/starter ~/.config/nvim
+
 # run lazy ensure that the binaries have loaded
-
-RUN mkdir -p /home/appuser/.config/nvim
-COPY init.lua /home/appuser/.config/nvim/init.lua
 RUN nvim --headless "+Lazy! sync" +qa
+
+
+# RUN mkdir -p /home/appuser/.config/nvim
+# COPY init.lua /home/appuser/.config/nvim/init.lua
+
+
 
 
 # copy the binaries
