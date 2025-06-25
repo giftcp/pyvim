@@ -26,6 +26,8 @@ apt-get install -y --no-install-recommends \
     npm && \
     rm -rf /var/lib/apt/lists/*
 
+RUN python3 -m pip install --upgrade pip
+
 # -----------------------------
 # Install Neovim 0.11.2
 # -----------------------------
