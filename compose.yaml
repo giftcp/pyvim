@@ -3,7 +3,7 @@ version: "3.9"
 services:
   pyvim:
     image: pyvim:manual
-    container_name: pyvim_container
+    container_name: pyvim
     stdin_open: true
     tty: true
     ports:
@@ -13,7 +13,6 @@ services:
       - pyvim_plugins:/home/appuser/.config/nvim/lua/plugins
     command: /bin/bash
     restart: "no"
-
 
 volumes:
   pyvim_home:
