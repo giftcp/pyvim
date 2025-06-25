@@ -4,7 +4,7 @@ FROM ubuntu:24.04.2
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl git wget build-essential libssl-dev zlib1g-dev libbz2-dev \
     libreadline-dev libsqlite3-dev libffi-dev ca-certificates \
-    tar xz-utils libncursesw5-dev adduser && \
+    tar xz-utils libncursesw5-dev adduser tmux && \
     rm -rf /var/lib/apt/lists/*
 
 # -----------------------------
@@ -42,6 +42,11 @@ RUN adduser \
   mkdir -p /home/appuser && \
   chown -R appuser:appuser /home/appuser
 
+RUN curl -LO https://github.com/quarto-dev/quarto-cli/releases/download/v1.7.32/quarto-1.7.32-linux-amd64.deb && \
+    apt-get update && \
+    apt-get install -y ./quarto-1.7.32-linux-amd64.deb && \
+    rm quarto-1.7.32-linux-amd64.deb
+
 # Set working directory and user
 USER appuser
 WORKDIR /home/appuser
@@ -52,16 +57,20 @@ ENV HOME=/home/appuser
 RUN git clone https://github.com/LazyVim/starter ~/.config/nvim
 
 # run lazy ensure that the binaries have loaded
-RUN nvim --headless "+Lazy! sync" +qa
 
-
-# RUN mkdir -p /home/appuser/.config/nvim
-# COPY init.lua /home/appuser/.config/nvim/init.lua
-
-
+RUN nvim --headless \
+  "+Lazy! restore" \
+  "+Lazy! sync" \
+  "+lua require('lazy').install()" \
+  "+lua require('lazy').load({wait = true})" \
+  "+qa"
 
 
 # copy the binaries
+# install tmux
+# import my .dot files bash, key enable-optimizations
+# map the dotfiles to the external files
+# update pip
 
 # Add Neovim to PATH
 ENV PATH="/opt/nvim/bin:$PATH"
