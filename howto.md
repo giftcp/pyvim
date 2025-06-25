@@ -1,5 +1,14 @@
 ### docker run commands
 
+#### create storage
+
+```
+```
+docker volume create pyvim_home
+docker volume create pyvim_plugins
+
+```
+```
 #### build image
 
 ```
