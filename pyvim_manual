@@ -1,10 +1,31 @@
 FROM ubuntu:24.04.2
 
 # Install dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl git wget build-essential libssl-dev zlib1g-dev libbz2-dev \
-    libreadline-dev libsqlite3-dev libffi-dev ca-certificates \
-    tar xz-utils libncursesw5-dev adduser tmux && \
+RUN apt-get update && \
+apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    wget \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libffi-dev \
+    ca-certificates \
+    tar \
+    xz-utils \
+    libncursesw5-dev \
+    adduser \
+    tmux \
+    iproute2 \
+    net-tools \
+    python3-pip \
+    python3-venv \
+    nodejs \
+    nodejs \
+    npm && \
     rm -rf /var/lib/apt/lists/*
 
 # -----------------------------
@@ -30,6 +51,10 @@ RUN curl -fL -o nvim.tar.gz https://github.com/neovim/neovim/releases/download/v
     ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim && \
     rm nvim.tar.gz
 
+RUN curl -LO https://github.com/quarto-dev/quarto-cli/releases/download/v1.7.32/quarto-1.7.32-linux-amd64.deb && \
+    apt-get install -y ./quarto-1.7.32-linux-amd64.deb && \
+    rm quarto-1.7.32-linux-amd64.deb
+
 # Create a non-privileged user that the app will run under.
 ARG UID=10001
 RUN adduser \
@@ -41,11 +66,6 @@ RUN adduser \
   appuser && \
   mkdir -p /home/appuser && \
   chown -R appuser:appuser /home/appuser
-
-RUN curl -LO https://github.com/quarto-dev/quarto-cli/releases/download/v1.7.32/quarto-1.7.32-linux-amd64.deb && \
-    apt-get update && \
-    apt-get install -y ./quarto-1.7.32-linux-amd64.deb && \
-    rm quarto-1.7.32-linux-amd64.deb
 
 # Set working directory and user
 USER appuser
