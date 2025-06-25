@@ -1,4 +1,4 @@
-FROM ubuntu:24.04.2
+FROM python:3.13.3-slim 
 
 # Install dependencies
 RUN apt-get update && \
@@ -21,25 +21,10 @@ apt-get install -y --no-install-recommends \
     tmux \
     iproute2 \
     net-tools \
-    python3-pip \
-    python3-venv \
     nodejs \
     nodejs \
     npm && \
     rm -rf /var/lib/apt/lists/*
-
-# -----------------------------
-# Install Python 3.13.3
-# -----------------------------
-WORKDIR /tmp
-RUN curl -LO https://www.python.org/ftp/python/3.13.3/Python-3.13.3.tgz && \
-    tar -xzf Python-3.13.3.tgz && \
-    cd Python-3.13.3 && \
-    ./configure --enable-optimizations --prefix=/opt/python3.13.3 && \
-    make -j$(nproc) && make install
-
-# Add Python to PATH
-ENV PATH="/opt/python3.13.3/bin:$PATH"
 
 # -----------------------------
 # Install Neovim 0.11.2
@@ -85,7 +70,6 @@ RUN nvim --headless \
   "+lua require('lazy').load({wait = true})" \
   "+qa"
 
-
 # copy the binaries
 # install tmux
 # import my .dot files bash, key enable-optimizations
@@ -93,8 +77,7 @@ RUN nvim --headless \
 # update pip
 
 # Add Neovim to PATH
-ENV PATH="/opt/nvim/bin:$PATH"
-
+ENV PATH="/home/appuser/.local/bin:/opt/nvim/bin:$PATH"
 
 CMD ["/bin/bash"]
 
